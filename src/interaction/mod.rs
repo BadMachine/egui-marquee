@@ -1,45 +1,55 @@
-use std::ops::Deref;
 use egui::Id;
+use std::ops::Deref;
 
 mod widget;
 
-pub trait Interactive<Callback>: Sized
+pub trait Interactive<Inside, Outside>: Sized
 where
-    Callback: FnOnce(&mut Self, Vec<Id>, &mut egui::Ui),
+    Inside: FnOnce(&mut Self, Vec<Id>, &mut egui::Ui),
+    Outside: FnOnce(&mut Self, &mut egui::Ui),
 {
     fn interactive<Id: Into<egui::Id>>(
         self,
         id: Id,
-        callback: Callback,
-    ) -> InteractiveComponent<Callback, Self>;
+        inside: Inside,
+        outside: Outside,
+    ) -> InteractiveComponent<Self, Inside, Outside>;
 }
 
-pub struct InteractiveComponent<Callback, Component: Interactive<Callback>>
+pub struct InteractiveComponent<Component, Inside, Outside>
 where
-    Callback: for<'a> FnOnce(&mut Component, Vec<Id>, &'a mut egui::Ui),
+    Component: Interactive<Inside, Outside>,
+    Inside: for<'a> FnOnce(&mut Component, Vec<Id>, &'a mut egui::Ui),
+    Outside: for<'a> FnOnce(&mut Component, &'a mut egui::Ui),
 {
     id: Id,
     inner: Component,
-    callback: Callback,
+    inside: Inside,
+    outside: Outside,
 }
 
-impl<Callback, Component: Interactive<Callback>> InteractiveComponent<Callback, Component>
+impl<Inside, Outside, Component: Interactive<Inside, Outside>>
+    InteractiveComponent<Component, Inside, Outside>
 where
-    Callback: for<'a> FnOnce(&mut Component, Vec<Id>, &'a mut egui::Ui),
+    Component: Interactive<Inside, Outside>,
+    Inside: for<'a> FnOnce(&mut Component, Vec<Id>, &'a mut egui::Ui),
+    Outside: for<'a> FnOnce(&mut Component, &'a mut egui::Ui),
 {
-    pub fn new(id: Id, inner: Component, callback: Callback) -> Self {
+    pub fn new(id: Id, inner: Component, inside: Inside, outside: Outside) -> Self {
         Self {
             id,
             inner,
-            callback,
+            inside,
+            outside,
         }
     }
 }
 
-impl<Callback, Component> Deref for InteractiveComponent<Callback, Component>
+impl<Component, Inside, Outside> Deref for InteractiveComponent<Component, Inside, Outside>
 where
-    Component: Interactive<Callback>,
-    Callback: for<'a> FnOnce(&mut Component, Vec<Id>, &'a mut egui::Ui),
+    Component: Interactive<Inside, Outside>,
+    Inside: for<'a> FnOnce(&mut Component, Vec<Id>, &'a mut egui::Ui),
+    Outside: for<'a> FnOnce(&mut Component, &'a mut egui::Ui),
 {
     type Target = Component;
     fn deref(&self) -> &Self::Target {

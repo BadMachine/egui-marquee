@@ -3,30 +3,34 @@ use crate::state::State;
 use crate::{Interactive, MARQUEE_STORAGE_NAME};
 use egui::{Id, IdMap, Rect, UiBuilder, Widget};
 
-impl<W, Callback> Interactive<Callback> for W
+impl<W, Inside, Outside> Interactive<Inside, Outside> for W
 where
     W: Widget,
-    Callback: for<'a> FnOnce(&mut Self, Vec<Id>, &'a mut egui::Ui),
+    Inside: for<'a> FnOnce(&mut Self, Vec<Id>, &'a mut egui::Ui),
+    Outside: for<'a> FnOnce(&mut Self, &'a mut egui::Ui),
 {
     fn interactive<Id: Into<egui::Id>>(
         self,
         id: Id,
-        callback: Callback,
-    ) -> InteractiveComponent<Callback, Self> {
-        InteractiveComponent::new(id.into(), self, callback)
+        inside: Inside,
+        outside: Outside,
+    ) -> InteractiveComponent<Self, Inside, Outside> {
+        InteractiveComponent::new(id.into(), self, inside, outside)
     }
 }
 
-impl<Callback, Component> Widget for InteractiveComponent<Callback, Component>
+impl<Component, Inside, Outside> Widget for InteractiveComponent<Component, Inside, Outside>
 where
-    Component: Interactive<Callback> + Widget,
-    Callback: for<'a> FnOnce(&mut Component, Vec<Id>, &'a mut egui::Ui),
+    Component: Interactive<Inside, Outside> + Widget,
+    Inside: for<'a> FnOnce(&mut Component, Vec<Id>, &'a mut egui::Ui),
+    Outside: for<'a> FnOnce(&mut Component, &'a mut egui::Ui),
 {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let InteractiveComponent {
             id,
             mut inner,
-            callback,
+            inside,
+            outside,
         } = self;
 
         let previous_response = ui.ctx().read_response(id);
@@ -58,7 +62,9 @@ where
             });
 
             if !intersects_with.is_empty() {
-                callback(&mut inner, intersects_with, ui);
+                inside(&mut inner, intersects_with, ui);
+            } else {
+                outside(&mut inner, ui);
             }
         }
 

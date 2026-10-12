@@ -62,7 +62,8 @@ where
         }
 
         // use scope since we need to hold a unique Id for the widget
-        ui.scope_builder(UiBuilder::new().scope_id(id), |ui| inner.ui(ui))
+        // TODO: change id method to scope_id after 0.37 released
+        ui.scope_builder(UiBuilder::new().id(id), |ui| inner.ui(ui))
             .inner
     }
 }

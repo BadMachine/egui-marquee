@@ -88,7 +88,8 @@ impl Marquee {
         ui: &mut Ui,
         add_contents: impl FnOnce(&mut Ui) -> R,
     ) -> MarqueeResponse<R> {
-        let const_map_name = Id::unique(MARQUEE_STORAGE_NAME);
+        // TODO: "new" is planned to be deprecated (use unique in 0.37 instead), 0.36 still uses new tho
+        let const_map_name = Id::new(MARQUEE_STORAGE_NAME);
 
         let InnerResponse { inner, response } = ui.scope_builder(
             UiBuilder::new().id_salt(self.id).sense(Sense::drag()),
@@ -170,19 +171,12 @@ impl Marquee {
                         gap_length,
                     ),
                     StrokeStyle::Solid => {
-                        vec![
-                            egui::Shape::rect_stroke(
-                                rect,
-                                0.,
-                                *stroke, // for example visuals.window_stroke
-                                egui::StrokeKind::Inside,
-                            ),
-                            // egui::Shape::circle_stroke(
-                            //     rect.center(),
-                            //     (rect.width().min(rect.height()) / 2.) - inset_offset,
-                            //     *stroke, // for example visuals.window_stroke
-                            // ),
-                        ]
+                        vec![egui::Shape::rect_stroke(
+                            rect,
+                            0.,
+                            *stroke, // for example visuals.window_stroke
+                            egui::StrokeKind::Inside,
+                        )]
                     }
                     StrokeStyle::Dotted {
                         color,

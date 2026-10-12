@@ -1,13 +1,12 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 #![expect(rustdoc::missing_crate_level_docs)] // it's an example
 
-use std::cell::RefCell;
-use std::sync::Arc;
 use eframe::egui;
 use eframe::egui::{Color32, TextStyle};
 use egui::{Id, Stroke};
 use egui_extras::{Size, StripBuilder};
 use egui_marquee::Interactive;
+use std::cell::RefCell;
 
 fn main() -> eframe::Result {
     let options = eframe::NativeOptions {
@@ -64,13 +63,12 @@ impl eframe::App for MyApp {
                                 faded_color(Color32::BLUE),
                             );
 
-                            let label = egui::Label::new("goo goo").wrap().interactive(
-                                "test_interactivity_1",
-                                |label, _, _| {
+                            let label = egui::Label::new("goo goo")
+                                .wrap()
+                                .interactive("test_interactivity_1")
+                                .inside(|label, _, _| {
                                     *label = egui::Label::new("gaga");
-                                },
-                                |_,_| {}
-                            );
+                                });
 
                             ui.add_sized(rect.size(), label);
                         });
@@ -84,13 +82,12 @@ impl eframe::App for MyApp {
                                         0.0,
                                         faded_color(Color32::RED),
                                     );
-                                    let label = egui::Label::new("foo").wrap().interactive(
-                                        "test_interactivity_2",
-                                        |label, _, _| {
+                                    let label = egui::Label::new("foo")
+                                        .wrap()
+                                        .interactive("test_interactivity_2")
+                                        .inside(|label, _, _| {
                                             *label = egui::Label::new("bar");
-                                        },
-                                        |_,_| {}
-                                    );
+                                        });
 
                                     ui.add_sized(rect.size(), label);
                                 });
@@ -128,20 +125,24 @@ impl eframe::App for MyApp {
                                                 strip.cell(|ui| {
                                                     let rect = ui.available_rect_before_wrap();
 
-
-                                                    let label = egui::Label::new(":(").wrap().interactive(
-                                                        ":|",
-                                                        |label, _, _| {
+                                                    let label = egui::Label::new(":(")
+                                                        .wrap()
+                                                        .interactive(":|")
+                                                        .inside(|label, _, _| {
                                                             *label = egui::Label::new(":)");
-                                                            *self.first_interactive_color.borrow_mut() = Color32::GREEN;
-                                                        },
-                                                        |_,_| {
-                                                            *self.first_interactive_color.borrow_mut() = Color32::RED;
-                                                        }
-                                                    );
+                                                            *self
+                                                                .first_interactive_color
+                                                                .borrow_mut() = Color32::GREEN;
+                                                        })
+                                                        .outside(|_, _| {
+                                                            *self
+                                                                .first_interactive_color
+                                                                .borrow_mut() = Color32::RED;
+                                                        });
 
                                                     {
-                                                        let col = *self.first_interactive_color.borrow();
+                                                        let col =
+                                                            *self.first_interactive_color.borrow();
 
                                                         println!("COL: {col:?}");
 

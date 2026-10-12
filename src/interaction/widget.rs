@@ -1,4 +1,4 @@
-use crate::interaction::{InteractionSettings, InteractiveComponent};
+use crate::interaction::InteractiveComponent;
 use crate::state::State;
 use crate::{Interactive, MARQUEE_STORAGE_NAME};
 use egui::{Id, IdMap, Rect, UiBuilder, Widget};
@@ -6,15 +6,14 @@ use egui::{Id, IdMap, Rect, UiBuilder, Widget};
 impl<W, Inside, Outside> Interactive<Inside, Outside> for W
 where
     W: Widget,
-    Inside: for<'a> FnOnce(&mut Self, Vec<Id>, &'a mut egui::Ui),
-    Outside: for<'a> FnOnce(&mut Self, &'a mut egui::Ui),
+    Inside: for<'a> FnOnce(&mut W, Vec<Id>, &'a mut egui::Ui),
+    Outside: for<'a> FnOnce(&mut W, &'a mut egui::Ui),
 {
     fn interactive<Id: Into<egui::Id>>(
         self,
         id: Id,
-        settings: InteractionSettings<Inside, Outside>,
     ) -> InteractiveComponent<Self, Inside, Outside> {
-        InteractiveComponent::new(self, id, settings)
+        InteractiveComponent::<Self, Inside, Outside>::new(self, id)
     }
 }
 
@@ -27,14 +26,10 @@ where
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let InteractiveComponent {
             id,
-            settings,
-            mut inner,
-        } = self;
-
-        let InteractionSettings {
             inside_callback,
             outside_callback,
-        } = settings;
+            mut inner,
+        } = self;
 
         let previous_response = ui.ctx().read_response(id);
 

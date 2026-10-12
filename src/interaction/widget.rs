@@ -64,10 +64,12 @@ where
                 }
             });
 
-            if !intersects_with.is_empty() {
-                inside_callback(&mut inner, intersects_with, ui);
-            } else {
-                outside_callback(&mut inner, ui);
+            if !intersects_with.is_empty()
+                && let Some(cb) = inside_callback
+            {
+                cb(&mut inner, intersects_with, ui);
+            } else if let Some(cb) = outside_callback {
+                cb(&mut inner, ui);
             }
         }
 

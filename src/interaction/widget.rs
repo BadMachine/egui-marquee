@@ -1,4 +1,4 @@
-use crate::interaction::InteractiveComponent;
+use crate::interaction::{InteractionSettings, InteractiveComponent};
 use crate::state::State;
 use crate::{Interactive, MARQUEE_STORAGE_NAME};
 use egui::{Id, IdMap, Rect, UiBuilder, Widget};
@@ -12,10 +12,9 @@ where
     fn interactive<Id: Into<egui::Id>>(
         self,
         id: Id,
-        inside: Inside,
-        outside: Outside,
+        settings: InteractionSettings<Inside, Outside>,
     ) -> InteractiveComponent<Self, Inside, Outside> {
-        InteractiveComponent::new(id.into(), self, inside, outside)
+        InteractiveComponent::new(self, id, settings)
     }
 }
 
@@ -28,10 +27,14 @@ where
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let InteractiveComponent {
             id,
+            settings,
             mut inner,
-            inside,
-            outside,
         } = self;
+
+        let InteractionSettings {
+            inside_callback,
+            outside_callback,
+        } = settings;
 
         let previous_response = ui.ctx().read_response(id);
 
@@ -62,9 +65,9 @@ where
             });
 
             if !intersects_with.is_empty() {
-                inside(&mut inner, intersects_with, ui);
+                inside_callback(&mut inner, intersects_with, ui);
             } else {
-                outside(&mut inner, ui);
+                outside_callback(&mut inner, ui);
             }
         }
 

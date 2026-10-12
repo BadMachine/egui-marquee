@@ -1,55 +1,39 @@
-use egui::Id;
 use std::ops::Deref;
 
+mod settings;
 mod widget;
 
-pub trait Interactive<Inside, Outside>: Sized
-where
-    Inside: FnOnce(&mut Self, Vec<Id>, &mut egui::Ui),
-    Outside: FnOnce(&mut Self, &mut egui::Ui),
-{
+pub use settings::InteractionSettings;
+
+pub trait Interactive<Inside, Outside>: Sized {
     fn interactive<Id: Into<egui::Id>>(
         self,
         id: Id,
-        inside: Inside,
-        outside: Outside,
+        settings: InteractionSettings<Inside, Outside>,
     ) -> InteractiveComponent<Self, Inside, Outside>;
 }
 
 pub struct InteractiveComponent<Component, Inside, Outside>
 where
     Component: Interactive<Inside, Outside>,
-    Inside: for<'a> FnOnce(&mut Component, Vec<Id>, &'a mut egui::Ui),
-    Outside: for<'a> FnOnce(&mut Component, &'a mut egui::Ui),
 {
-    id: Id,
+    id: egui::Id,
     inner: Component,
-    inside: Inside,
-    outside: Outside,
+    settings: InteractionSettings<Inside, Outside>,
 }
 
-impl<Inside, Outside, Component: Interactive<Inside, Outside>>
-    InteractiveComponent<Component, Inside, Outside>
+impl<Component, Inside, Outside> InteractiveComponent<Component, Inside, Outside>
 where
     Component: Interactive<Inside, Outside>,
-    Inside: for<'a> FnOnce(&mut Component, Vec<Id>, &'a mut egui::Ui),
-    Outside: for<'a> FnOnce(&mut Component, &'a mut egui::Ui),
 {
-    pub fn new(id: Id, inner: Component, inside: Inside, outside: Outside) -> Self {
-        Self {
-            id,
-            inner,
-            inside,
-            outside,
-        }
+    pub fn new<I: Into<egui::Id>>(inner: Component, id: I, settings: InteractionSettings<Inside, Outside>) -> Self {
+        Self {  id: I::into(id), inner, settings }
     }
 }
 
 impl<Component, Inside, Outside> Deref for InteractiveComponent<Component, Inside, Outside>
 where
     Component: Interactive<Inside, Outside>,
-    Inside: for<'a> FnOnce(&mut Component, Vec<Id>, &'a mut egui::Ui),
-    Outside: for<'a> FnOnce(&mut Component, &'a mut egui::Ui),
 {
     type Target = Component;
     fn deref(&self) -> &Self::Target {

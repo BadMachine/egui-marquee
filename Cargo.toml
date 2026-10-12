@@ -2,6 +2,13 @@
 name = "egui-marquee"
 version = "0.1.0"
 edition = "2024"
+keywords = ["selection", "area", "marquee", "egui", "widget"]
+categories = ["gui"]
+description = "Marquee is a small crate that brings selection areas to egui"
+homepage = "https://github.com/BadMachine/egui-marquee"
+repository = "https://github.com/BadMachine/egui-marquee"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
 
 [dependencies]
 egui = "0.36"

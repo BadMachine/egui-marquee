@@ -35,7 +35,8 @@ where
             let rect = response.interact_rect;
 
             let intersects_with: Vec<Id> = ui.data(|storage| {
-                let areas = storage.get_temp::<IdMap<State>>(Id::unique(MARQUEE_STORAGE_NAME));
+                // TODO: change "new" with "unique" after 0.37 release
+                let areas = storage.get_temp::<IdMap<State>>(Id::new(MARQUEE_STORAGE_NAME));
 
                 match areas {
                     None => vec![],

@@ -10,5 +10,9 @@ repository = "https://github.com/BadMachine/egui-marquee"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 
+exclude = [
+    "assets/**",
+]
+
 [dependencies]
 egui = "0.36"

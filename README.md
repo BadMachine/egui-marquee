@@ -1,4 +1,4 @@
-<p style="text-align:center">
+<p align="center" style="text-align:center">
   <img src="assets/logo.webp" alt="logo" />
 </p>
 
@@ -8,6 +8,8 @@
 
 No LLM-generated content, whether it be code or
 prose.  [Code of Conduct](https://rust-lang.org/policies/code-of-conduct/)
+
+![demo.gif](demo/assets/demo.gif)
 
 ## Super-simple how to
 ```rust

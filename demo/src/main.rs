@@ -3,21 +3,35 @@
 
 use eframe::egui;
 use eframe::egui::{Color32, TextStyle};
+use egui::Shape::Vec;
 use egui::{Id, Stroke};
+// use egui_extras::SvgGlyph;
 use egui_extras::{Size, StripBuilder};
 use egui_marquee::Interactive;
 use std::cell::RefCell;
+// Uncomment for 0.36.3
+// /// A private use character, rendered as Ferris.
+// const FERRIS: char = '\u{E000}';
+//
+// /// A regular character whose glyph we override.
+// const HEART: char = '♥';
+
+const FERRIS: &[u8] = include_bytes!("../assets/ferris.svg");
+const HEART: &[u8] = include_bytes!("../assets/heart.svg");
 
 fn main() -> eframe::Result {
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default().with_inner_size([320.0, 240.0]),
+        viewport: egui::ViewportBuilder::default().with_inner_size([640.0, 480.0]),
         ..Default::default()
     };
 
     eframe::run_native(
         "My egui App",
         options,
-        Box::new(|cc| Ok(Box::<MyApp>::default())),
+        Box::new(|cc| {
+            egui_extras::install_image_loaders(&cc.egui_ctx);
+            Ok(Box::<MyApp>::default())
+        }),
     )
 }
 
@@ -32,6 +46,21 @@ impl Default for MyApp {
         }
     }
 }
+
+// fn install_svg_glyphs(ctx: &egui::Context) -> Result<(), String> {
+//     // The heart is white, so it is tinted with the text color.
+//     // It is a bit smaller than the font size, and lifted slightly above the baseline:
+//     let heart = SvgGlyph::from_bytes(include_bytes!("../assets/heart.svg"))?
+//         .with_height(0.7)
+//         .with_baseline_offset(0.05);
+//     ctx.add_glyph_rasterizer(heart.into_rasterizer(HEART.to_string()));
+//
+//     // Ferris is colorful, so the colors are kept:
+//     let ferris = SvgGlyph::from_bytes(include_bytes!("../assets/ferris.svg"))?;
+//     ctx.add_glyph_rasterizer(ferris.into_rasterizer(FERRIS.to_string()));
+
+//     Ok(())
+// }
 
 impl eframe::App for MyApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
@@ -144,8 +173,6 @@ impl eframe::App for MyApp {
                                                         let col =
                                                             *self.first_interactive_color.borrow();
 
-                                                        println!("COL: {col:?}");
-
                                                         ui.painter().rect_filled(
                                                             ui.available_rect_before_wrap(),
                                                             0.0,
@@ -157,22 +184,26 @@ impl eframe::App for MyApp {
                                                 });
                                             });
                                     });
-                                    strip.empty();
                                     strip.cell(|ui| {
                                         ui.painter().rect_filled(
                                             ui.available_rect_before_wrap(),
                                             0.0,
                                             faded_color(Color32::GREEN),
                                         );
-                                        ui.label("width: 70px\n\nheight: 50%, but at least 60px.");
+
+                                        let image =
+                                            egui::Image::from_bytes("bytes://ferris.svg", FERRIS)
+                                                .interactive("luv_rust")
+                                                .inside(|label, _, _| {
+                                                    *label = egui::Image::from_bytes(
+                                                        "bytes://heart.svg",
+                                                        HEART,
+                                                    );
+                                                });
+                                        ui.add(image);
                                     });
                                 });
                         });
-                        // strip.cell(|ui| {
-                        //     ui.vertical_centered(|ui| {
-                        //         ui.add(crate::egui_github_link_file!());
-                        //     });
-                        // });
                     });
             });
     }

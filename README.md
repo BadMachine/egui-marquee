@@ -16,11 +16,10 @@ use egui_marquee::Interactive;
 egui_marquee::Marquee::new(egui::Id::unique("area"))
     .stroke(Stroke::new(1.0, Color32::RED))
     .show(ui, |ui| {
-        let label = egui::Label::new("Foo Bar").interactive(
-            Id::unique("test_area"),
-            |label, area_ids, ui| {
-                *label = egui::Label::new("boogoo gaga");
-            },
+        let label = egui::Label::new("Foo Bar").interactive(Id::unique("test_area"))
+        .inside(|label, area_ids, ui| {
+          *label = egui::Label::new("boogoo gaga");
+          }
         );
 
         ui.add(label);
@@ -34,5 +33,6 @@ egui_marquee::Marquee::new(egui::Id::unique("area"))
 - [x] Rect area drawing with customizable fill and stroke.
 - [x] Interactivity expressed via "Interactive" trait
     - [x] Widget blanket implementation.
+    - [x] inside / outside handlers
 - [ ] Pass egui::Shape as the area shape.
 - [ ] Persisted areas (option to define / spawn multiple areas).

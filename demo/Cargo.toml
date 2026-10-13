@@ -1,0 +1,28 @@
+[workspace]
+
+[package]
+name = "demo"
+version = "0.1.0"
+edition = "2024"
+
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+egui = { version = "0.36" }
+egui_extras = { version = "0.36", features = ["svg"] }
+eframe = { version = "0.36" }
+egui-marquee = { path = "../." }
+
+# native:
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# Always enable eframe's `inspection` feature on native so `EGUI_INSPECTION=1 cargo run -p
+# egui_demo_app` opens an inspection port for `egui_mcp` (no-op when the env var is unset).
+eframe = { version = "0.36", features = ["inspection"] }
+
+# web:
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2.129"
+wasm-bindgen-futures = "0.4.79"
+web-sys = "0.3.106"

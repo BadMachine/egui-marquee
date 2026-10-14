@@ -4,6 +4,7 @@ mod state;
 mod stroke;
 
 pub use interaction::Interactive;
+use std::ops::{Add, Div, Mul, Sub};
 
 pub use response::*;
 
@@ -41,7 +42,7 @@ impl Marquee {
         self.stroke.style = StrokeStyle::Dotted {
             radius,
             color,
-            spacing: spacing.unwrap_or(radius * 2.),
+            spacing: spacing.unwrap_or(radius.mul(2.)),
         };
 
         self
@@ -107,30 +108,35 @@ impl Marquee {
 
         let current_pointer_pos = response.interact_pointer_pos();
 
-        if response.drag_started_by(self.button) {
-            state.start = ui
+        if response.drag_started_by(self.button)
+            && let Some(start) = ui
                 .input(|i| i.pointer.press_origin())
-                .or_else(|| current_pointer_pos);
+                .or_else(|| current_pointer_pos)
+        {
+            state = State::Active { start, end: start }
         }
 
         let stroke = self.stroke;
 
         let possible_area = response.rect.intersect(ui.clip_rect());
 
-        let selection = match (state.start, current_pointer_pos) {
-            (Some(start), Some(current))
+        state = match (state, current_pointer_pos) {
+            (State::Active { start, .. }, Some(current))
                 if response.dragged_by(self.button) || response.drag_stopped_by(self.button) =>
             {
                 // Here is the tricky part: we need to preserve the order (dont create a new Rect out of those positions) because
                 // we possibly need to check intersection later
                 // but Rect::min/max messes stuff around
-                Some((start, current.clamp(possible_area.min, possible_area.max)))
+                State::Active {
+                    start,
+                    end: current.clamp(possible_area.min, possible_area.max),
+                }
             }
-            _ => None,
+            _ => State::Inactive,
         };
 
-        if let Some((start_position, end_position)) = selection {
-            let rect = Rect::from_two_pos(start_position, end_position);
+        if let State::Active { start, end } = &mut state {
+            let rect = Rect::from_two_pos(*start, *end);
             let painter = ui.painter().with_clip_rect(possible_area);
 
             painter.rect_filled(rect.shrink(stroke.width), 0., self.fill);
@@ -138,7 +144,7 @@ impl Marquee {
             if stroke.width > 0. {
                 let inset_offset: f32 = match stroke.style {
                     StrokeStyle::Dashed { .. } => stroke.width,
-                    StrokeStyle::Dotted { radius, .. } => radius / 2.,
+                    StrokeStyle::Dotted { radius, .. } => radius.div(2.),
                     _ => 0.,
                 };
 
@@ -146,13 +152,13 @@ impl Marquee {
                 // So thats why we are offsetting those positions
                 // Otherwise the border gets clipped
                 let left_upper_corner =
-                    Pos2::new(rect.min.x + inset_offset, rect.min.y + inset_offset);
+                    Pos2::new(rect.min.x.add(inset_offset), rect.min.y.add(inset_offset));
                 let right_upper_corner =
-                    Pos2::new(rect.max.x - inset_offset, rect.min.y + inset_offset);
+                    Pos2::new(rect.max.x.sub(inset_offset), rect.min.y.sub(inset_offset));
                 let right_down_corner =
-                    Pos2::new(rect.max.x - inset_offset, rect.max.y - inset_offset);
+                    Pos2::new(rect.max.x.sub(inset_offset), rect.max.y.sub(inset_offset));
                 let left_down_corner =
-                    Pos2::new(rect.min.x + inset_offset, rect.max.y - inset_offset);
+                    Pos2::new(rect.min.x.add(inset_offset), rect.max.y.sub(inset_offset));
 
                 let shapes = match stroke.style {
                     StrokeStyle::Dashed {
@@ -198,14 +204,12 @@ impl Marquee {
 
                 painter.add(shapes);
             }
-
-            state.end = Some(end_position)
         }
 
-        // Purge if selection ended
-        if selection.is_none() || response.drag_stopped() {
-            state.start = None;
-            state.end = None;
+        if let State::Active { start, end } = state
+            && response.drag_stopped()
+        {
+            state = State::Finished { start, end }
         }
 
         // Short time lock again so we insert updated state
@@ -214,10 +218,16 @@ impl Marquee {
             marquee_map.insert(self.id, state);
         });
 
+        let selection = match state {
+            State::Active { start, end } => Some(Rect::from_two_pos(start, end)),
+            State::Finished { start, end } => Some(Rect::from_two_pos(start, end)),
+            State::Inactive => None,
+        };
+
         MarqueeResponse {
             inner,
             response,
-            selection: selection.map(|(start, end)| Rect::from_two_pos(start, end)),
+            selection,
         }
     }
 }

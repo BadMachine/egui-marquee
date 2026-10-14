@@ -95,7 +95,7 @@ impl eframe::App for MyApp {
                             let label = egui::Label::new("goo goo")
                                 .wrap()
                                 .interactive("test_interactivity_1")
-                                .inside(|label, _, _| {
+                                .inside(|label, _| {
                                     *label = egui::Label::new("gaga");
                                 });
 
@@ -114,7 +114,7 @@ impl eframe::App for MyApp {
                                     let label = egui::Label::new("foo")
                                         .wrap()
                                         .interactive("test_interactivity_2")
-                                        .inside(|label, _, _| {
+                                        .inside(|label, _| {
                                             *label = egui::Label::new("bar");
                                         });
 
@@ -157,18 +157,18 @@ impl eframe::App for MyApp {
                                                     let label = egui::Label::new(":(")
                                                         .wrap()
                                                         .interactive(":|")
-                                                        .inside(|label, _, _| {
+                                                        .inside(|label, _| {
                                                             *label = egui::Label::new(":)");
                                                             *self
                                                                 .first_interactive_color
                                                                 .borrow_mut() = Color32::GREEN;
                                                         })
-                                                        .outside(|_, _| {
+                                                        .outside(|_| {
                                                             *self
                                                                 .first_interactive_color
                                                                 .borrow_mut() = Color32::RED;
                                                         })
-                                                        .end(|_,_, _| {
+                                                        .end(|_,_| {
                                                             println!("HOORA!");
                                                         });
 
@@ -197,7 +197,7 @@ impl eframe::App for MyApp {
                                         let image =
                                             egui::Image::from_bytes("bytes://ferris.svg", FERRIS)
                                                 .interactive("luv_rust")
-                                                .inside(|label, _, _| {
+                                                .inside(|label, _| {
                                                     *label = egui::Image::from_bytes(
                                                         "bytes://heart.svg",
                                                         HEART,

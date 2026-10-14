@@ -35,6 +35,8 @@ egui_marquee::Marquee::new(egui::Id::unique("area"))
 - [x] Rect area drawing with customizable fill and stroke.
 - [x] Interactivity expressed via "Interactive" trait
     - [x] Widget blanket implementation.
-    - [x] inside / outside handlers
+    - [x] inside handler
+    - [x] Outside handler
+    - [x] Finish handler
 - [ ] Pass egui::Shape as the area shape.
 - [ ] Persisted areas (option to define / spawn multiple areas).

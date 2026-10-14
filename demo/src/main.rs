@@ -167,6 +167,9 @@ impl eframe::App for MyApp {
                                                             *self
                                                                 .first_interactive_color
                                                                 .borrow_mut() = Color32::RED;
+                                                        })
+                                                        .end(|_,_, _| {
+                                                            println!("HOORA!");
                                                         });
 
                                                     {

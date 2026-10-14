@@ -1,7 +1,8 @@
-use egui::Id;
+use egui::{Id, Widget};
 use std::ops::Deref;
 
 mod widget;
+pub(crate) mod response;
 
 pub struct Noop;
 
@@ -13,6 +14,12 @@ pub trait Interactive<Inside, Outside, End>: Sized {
         self,
         id: Id,
     ) -> InteractiveComponent<Self, Inside, Outside, End>;
+}
+
+impl<Component> Interactive<Noop, Noop, Noop> for Component {
+    fn interactive<Id: Into<egui::Id>>(self, id: Id) -> InteractiveComponent<Component> {
+        InteractiveComponent::<Component>::new(self, id)
+    }
 }
 
 pub struct InteractiveComponent<Component, Inside = Noop, Outside = Noop, End = Noop> {
@@ -41,7 +48,7 @@ impl<Component, Outside> InteractiveComponent<Component, Noop, Outside> {
         inside_callback: Inside,
     ) -> InteractiveComponent<Component, Inside, Outside>
     where
-        Inside: for<'a> FnOnce(&mut Component, Vec<egui::Id>, &'a mut egui::Ui),
+        Inside: for<'a> FnOnce(&mut Component, Vec<Id>),
     {
         InteractiveComponent {
             id: self.id,
@@ -59,7 +66,7 @@ impl<Component, Inside> InteractiveComponent<Component, Inside, Noop, Noop> {
         outside_callback: Outside,
     ) -> InteractiveComponent<Component, Inside, Outside>
     where
-        Outside: for<'a> FnOnce(&mut Component, &'a mut egui::Ui),
+        Outside: for<'a> FnOnce(&mut Component),
     {
         InteractiveComponent {
             id: self.id,
@@ -77,7 +84,7 @@ impl<Component, Inside, Outside> InteractiveComponent<Component, Inside, Outside
         end_callback: Finished,
     ) -> InteractiveComponent<Component, Inside, Outside, Finished>
     where
-        Finished: for<'a> FnOnce(&mut Component, Vec<FinishAreaId>, &'a mut egui::Ui),
+        Finished: for<'a> FnOnce(&mut Component, Vec<FinishAreaId>),
     {
         InteractiveComponent {
             id: self.id,

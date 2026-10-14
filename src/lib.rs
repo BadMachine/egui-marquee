@@ -4,6 +4,7 @@ mod state;
 mod stroke;
 
 pub use interaction::Interactive;
+pub use interaction::response::InteractiveResponse;
 use std::ops::{Add, Div, Mul, Sub};
 
 pub use response::*;

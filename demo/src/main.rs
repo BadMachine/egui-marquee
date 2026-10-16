@@ -3,13 +3,12 @@
 
 use eframe::egui;
 use eframe::egui::{Color32, TextStyle};
-use egui::Shape::Vec;
 use egui::{Id, Stroke};
 // use egui_extras::SvgGlyph;
 use egui_extras::{Size, StripBuilder};
 use egui_marquee::Interactive;
 use std::cell::RefCell;
-// Uncomment for 0.36.3
+// Uncomment for 0.37
 // /// A private use character, rendered as Ferris.
 // const FERRIS: char = '\u{E000}';
 //

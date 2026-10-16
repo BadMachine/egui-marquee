@@ -1,4 +1,4 @@
-use crate::interaction::{FinishAreaId, InsideAreaId, InteractiveComponent, Noop};
+use crate::interaction::{FinishAreaId, InsideAreaId, InteractiveComponent, LeftAreaId, Noop};
 use egui::{UiBuilder, Widget};
 
 impl<Component> egui::Widget for InteractiveComponent<Component, Noop, Noop, Noop>
@@ -41,7 +41,7 @@ where
 impl<Component, Outside> Widget for InteractiveComponent<Component, Noop, Outside>
 where
     Component: Widget,
-    Outside: for<'a> FnOnce(&mut Component, &'a mut egui::Ui),
+    Outside: for<'a> FnOnce(&mut Component, Vec<LeftAreaId>),
 {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let InteractiveComponent {
@@ -54,7 +54,7 @@ where
         let intersection_check = Self::check_intersection(&id, ui.ctx(), None);
 
         if !intersection_check.left.is_empty() {
-            outside_callback(&mut inner, ui);
+            outside_callback(&mut inner, intersection_check.left);
         }
 
         // use scope since we need to hold a unique Id for the widget
@@ -69,7 +69,7 @@ impl<Component, Inside, Outside> Widget for InteractiveComponent<Component, Insi
 where
     Component: Widget,
     Inside: for<'a> FnOnce(&mut Component, Vec<InsideAreaId>),
-    Outside: for<'a> FnOnce(&mut Component),
+    Outside: for<'a> FnOnce(&mut Component, Vec<LeftAreaId>),
 {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let InteractiveComponent {
@@ -87,7 +87,7 @@ where
         }
 
         if !intersection_check.left.is_empty() {
-            outside_callback(&mut inner);
+            outside_callback(&mut inner, intersection_check.left);
         }
 
         // use scope since we need to hold a unique Id for the widget
@@ -103,7 +103,7 @@ impl<Component, Inside, Outside, Finished> Widget
 where
     Component: Widget,
     Inside: for<'a> FnOnce(&mut Component, Vec<InsideAreaId>),
-    Outside: for<'a> FnOnce(&mut Component),
+    Outside: for<'a> FnOnce(&mut Component, Vec<LeftAreaId>),
     Finished: for<'a> FnOnce(&mut Component, Vec<FinishAreaId>),
 {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
@@ -122,7 +122,7 @@ where
         }
 
         if !intersection_check.left.is_empty() {
-            outside_callback(&mut inner);
+            outside_callback(&mut inner, intersection_check.left);
         }
 
         if !intersection_check.finished.is_empty() {

@@ -168,7 +168,7 @@ impl<Component, Inside> InteractiveComponent<Component, Inside, Noop, Noop> {
         outside_callback: Outside,
     ) -> InteractiveComponent<Component, Inside, Outside>
     where
-        Outside: for<'a> FnOnce(&mut Component),
+        Outside: for<'a> FnOnce(&mut Component, Vec<LeftAreaId>),
     {
         InteractiveComponent {
             id: self.id,

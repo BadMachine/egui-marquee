@@ -163,7 +163,7 @@ impl eframe::App for MyApp {
                                                                 .first_interactive_color
                                                                 .borrow_mut() = Color32::GREEN;
                                                         })
-                                                        .outside(|_| {
+                                                        .outside(|_, _| {
                                                             *self
                                                                 .first_interactive_color
                                                                 .borrow_mut() = Color32::RED;

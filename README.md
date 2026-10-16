@@ -9,7 +9,9 @@
 No LLM-generated content, whether it be code or
 prose.  [Code of Conduct](https://rust-lang.org/policies/code-of-conduct/)
 
-![demo.gif](demo/assets/demo.gif)
+<p align="center" style="text-align:center">
+  <img src="demo/assets/demo.gif" alt="demo" />
+</p>
 
 ## Super-simple how to
 ```rust

@@ -74,7 +74,7 @@ impl eframe::App for MyApp {
 
         let body_text_size = TextStyle::Body.resolve(ui.style()).size;
 
-        egui_marquee::Marquee::new(Id::new("demo"))
+        egui_marquee::Marquee::new("demo")
             .stroke(Stroke::new(1.0, Color32::RED))
             .show(ui, |ui| {
                 StripBuilder::new(ui)
@@ -163,12 +163,12 @@ impl eframe::App for MyApp {
                                                                 .first_interactive_color
                                                                 .borrow_mut() = Color32::GREEN;
                                                         })
-                                                        .outside(|_| {
+                                                        .outside(|_, _| {
                                                             *self
                                                                 .first_interactive_color
                                                                 .borrow_mut() = Color32::RED;
                                                         })
-                                                        .end(|_,_| {
+                                                        .end(|_, _| {
                                                             println!("HOORA!");
                                                         });
 

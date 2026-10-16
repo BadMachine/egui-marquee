@@ -13,11 +13,12 @@ pub use stroke::*;
 
 // egui::Id is not const compatible
 pub(crate) const MARQUEE_STORAGE_NAME: &str = "__marquee::storage__";
+pub(crate) const MARQUEE_STACK_TAG_KEY: &str = "marquee_stack";
 
+use crate::state::State;
 use egui::{
-    Color32, Id, IdMap, InnerResponse, PointerButton, Pos2, Rect, Sense, Stroke, Ui, UiBuilder,
+    Color32, Id, IdMap, PointerButton, Rect, Sense, Stroke, Ui, UiBuilder, UiKind, UiStackInfo,
 };
-use state::State;
 
 pub struct Marquee {
     id: Id,
@@ -51,9 +52,9 @@ impl Marquee {
 }
 
 impl Marquee {
-    pub fn new(id: Id) -> Self {
+    pub fn new<I: Into<egui::Id>>(id: I) -> Self {
         Self {
-            id,
+            id: I::into(id),
             fill: Color32::TRANSPARENT,
             button: PointerButton::Primary,
             stroke: MarqueeStroke::default(),
@@ -93,141 +94,166 @@ impl Marquee {
         // TODO: "new" is planned to be deprecated (use unique in 0.37 instead), 0.36 still uses new tho
         let const_map_name = Id::new(MARQUEE_STORAGE_NAME);
 
-        let InnerResponse { inner, response } = ui.scope_builder(
-            UiBuilder::new().id_salt(self.id).sense(Sense::drag()),
+        let info =
+            UiStackInfo::new(UiKind::GenericArea).with_tag_value(MARQUEE_STACK_TAG_KEY, self.id);
+
+        let inner_response = ui.scope_builder(
+            UiBuilder::new()
+                .id_salt(self.id)
+                .ui_stack_info(info)
+                .sense(Sense::drag()),
             add_contents,
         );
 
-        // Get global immutable marquee map (don't lock for too long)
-        let marquee_map = ui.data(|d| d.get_temp::<IdMap<State>>(const_map_name));
+        // Short read lock
+        let mut current_state = ui.data(|d| {
+            let map = d.get_temp::<IdMap<State>>(const_map_name);
+            map.map(|m| m.get(&self.id).cloned()).flatten()
+        });
 
-        // Copy state that needs to be mutated below (we gonna insert it next time we get mutable map)
-        let mut state: State = match marquee_map {
-            Some(map) => map.get(&self.id).map(|s| s.clone()).unwrap_or_default(),
-            None => State::default(),
-        };
+        if inner_response.response.drag_stopped()
+            || inner_response.response.drag_stopped_by(self.button)
+        {
+            if let Some(State::Active {
+                start,
+                end,
+                components,
+            }) = current_state
+            {
+                let selection = Rect::from_two_pos(start, end);
 
-        let current_pointer_pos = response.interact_pointer_pos();
+                ui.data_mut(|global_state| {
+                    let marquee_map =
+                        global_state.get_temp_mut_or_default::<IdMap<State>>(const_map_name);
 
-        if response.drag_started_by(self.button)
+                    // Explicitly shadow the state above
+                    let current_state = State::Finished {
+                        start,
+                        end,
+                        components,
+                    };
+
+                    marquee_map.insert(self.id, current_state);
+                });
+
+                return MarqueeResponse {
+                    inner: inner_response.inner,
+                    response: inner_response.response,
+                    selection: Some(selection),
+                };
+            }
+        }
+
+        let current_pointer_pos = inner_response.response.interact_pointer_pos();
+
+        if inner_response.response.drag_started_by(self.button)
             && let Some(start) = ui
                 .input(|i| i.pointer.press_origin())
                 .or_else(|| current_pointer_pos)
         {
-            state = State::Active { start, end: start }
+            current_state = Some(State::Active {
+                start,
+                end: start,
+                components: current_state
+                    .map(|s| s.components().cloned())
+                    .flatten()
+                    .unwrap_or_default(),
+            });
+            // TODO: Think how to rework this one static areas are introduced
+        } else if ui.input(|i| i.pointer.press_origin()).is_none() {
+            current_state = Some(Default::default())
         }
 
-        let stroke = self.stroke;
+        if let Some(State::Active { start, end, .. }) = &mut current_state {
+            let stroke = self.stroke;
 
-        let possible_area = response.rect.intersect(ui.clip_rect());
+            let current_end = current_pointer_pos.unwrap_or(*start);
 
-        state = match (state, current_pointer_pos) {
-            (State::Active { start, .. }, Some(current))
-                if response.dragged_by(self.button) || response.drag_stopped_by(self.button) =>
-            {
-                // Here is the tricky part: we need to preserve the order (dont create a new Rect out of those positions) because
-                // we possibly need to check intersection later
-                // but Rect::min/max messes stuff around
-                State::Active {
-                    start,
-                    end: current.clamp(possible_area.min, possible_area.max),
+            if start.distance(current_end) > 0.0 {
+                let rect = egui::Rect::from_two_pos(*start, current_end);
+                // let painter = ui.painter().with_clip_rect(possible_area);
+                let painter = ui.painter();
+                painter.rect_filled(rect.shrink(stroke.width), 0., self.fill);
+
+                if stroke.width > 0. {
+                    let inset_offset: f32 = match stroke.style {
+                        StrokeStyle::Dashed { .. } => stroke.width,
+                        StrokeStyle::Dotted { radius, .. } => radius.div(2.),
+                        _ => 0.,
+                    };
+
+                    // We need to draw the shape inside the space
+                    // So thats why we are offsetting those positions
+                    // Otherwise the border gets clipped
+                    let left_upper_corner =
+                        egui::Pos2::new(rect.min.x.add(inset_offset), rect.min.y.add(inset_offset));
+                    let right_upper_corner =
+                        egui::Pos2::new(rect.max.x.sub(inset_offset), rect.min.y.sub(inset_offset));
+                    let right_down_corner =
+                        egui::Pos2::new(rect.max.x.sub(inset_offset), rect.max.y.sub(inset_offset));
+                    let left_down_corner =
+                        egui::Pos2::new(rect.min.x.add(inset_offset), rect.max.y.sub(inset_offset));
+
+                    let shapes = match stroke.style {
+                        StrokeStyle::Dashed {
+                            dash_length,
+                            gap_length,
+                        } => egui::Shape::dashed_line(
+                            &[
+                                left_upper_corner,
+                                right_upper_corner,
+                                right_down_corner,
+                                left_down_corner,
+                                left_upper_corner,
+                            ],
+                            *stroke, // for example visuals.selection.stroke
+                            dash_length,
+                            gap_length,
+                        ),
+                        StrokeStyle::Solid => {
+                            vec![egui::Shape::rect_stroke(
+                                rect,
+                                0.,
+                                *stroke, // for example visuals.window_stroke
+                                egui::StrokeKind::Inside,
+                            )]
+                        }
+                        StrokeStyle::Dotted {
+                            color,
+                            spacing,
+                            radius,
+                        } => egui::Shape::dotted_line(
+                            &[
+                                left_upper_corner,
+                                right_upper_corner,
+                                right_down_corner,
+                                left_down_corner,
+                                left_upper_corner,
+                            ],
+                            color,
+                            spacing,
+                            radius,
+                        ),
+                    };
+
+                    painter.add(shapes);
                 }
             }
-            _ => State::Inactive,
-        };
 
-        if let State::Active { start, end } = &mut state {
-            let rect = Rect::from_two_pos(*start, *end);
-            let painter = ui.painter().with_clip_rect(possible_area);
-
-            painter.rect_filled(rect.shrink(stroke.width), 0., self.fill);
-
-            if stroke.width > 0. {
-                let inset_offset: f32 = match stroke.style {
-                    StrokeStyle::Dashed { .. } => stroke.width,
-                    StrokeStyle::Dotted { radius, .. } => radius.div(2.),
-                    _ => 0.,
-                };
-
-                // We need to draw the shape inside the space
-                // So thats why we are offsetting those positions
-                // Otherwise the border gets clipped
-                let left_upper_corner =
-                    Pos2::new(rect.min.x.add(inset_offset), rect.min.y.add(inset_offset));
-                let right_upper_corner =
-                    Pos2::new(rect.max.x.sub(inset_offset), rect.min.y.sub(inset_offset));
-                let right_down_corner =
-                    Pos2::new(rect.max.x.sub(inset_offset), rect.max.y.sub(inset_offset));
-                let left_down_corner =
-                    Pos2::new(rect.min.x.add(inset_offset), rect.max.y.sub(inset_offset));
-
-                let shapes = match stroke.style {
-                    StrokeStyle::Dashed {
-                        dash_length,
-                        gap_length,
-                    } => egui::Shape::dashed_line(
-                        &[
-                            left_upper_corner,
-                            right_upper_corner,
-                            right_down_corner,
-                            left_down_corner,
-                            left_upper_corner,
-                        ],
-                        *stroke, // for example visuals.selection.stroke
-                        dash_length,
-                        gap_length,
-                    ),
-                    StrokeStyle::Solid => {
-                        vec![egui::Shape::rect_stroke(
-                            rect,
-                            0.,
-                            *stroke, // for example visuals.window_stroke
-                            egui::StrokeKind::Inside,
-                        )]
-                    }
-                    StrokeStyle::Dotted {
-                        color,
-                        spacing,
-                        radius,
-                    } => egui::Shape::dotted_line(
-                        &[
-                            left_upper_corner,
-                            right_upper_corner,
-                            right_down_corner,
-                            left_down_corner,
-                            left_upper_corner,
-                        ],
-                        color,
-                        spacing,
-                        radius,
-                    ),
-                };
-
-                painter.add(shapes);
-            }
+            *end = current_end;
         }
 
-        if let State::Active { start, end } = state
-            && response.drag_stopped()
-        {
-            state = State::Finished { start, end }
-        }
-
+        let selection = current_state.as_ref().map(|cs| cs.rect()).flatten();
+        
         // Short time lock again so we insert updated state
         ui.data_mut(|global_state| {
             let marquee_map = global_state.get_temp_mut_or_default::<IdMap<State>>(const_map_name);
-            marquee_map.insert(self.id, state);
+            marquee_map.insert(self.id, current_state.unwrap_or_default());
         });
 
-        let selection = match state {
-            State::Active { start, end } => Some(Rect::from_two_pos(start, end)),
-            State::Finished { start, end } => Some(Rect::from_two_pos(start, end)),
-            State::Inactive => None,
-        };
-
         MarqueeResponse {
-            inner,
-            response,
+            inner: inner_response.inner,
+            response: inner_response.response,
             selection,
         }
     }

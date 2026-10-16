@@ -91,8 +91,7 @@ impl Marquee {
         ui: &mut Ui,
         add_contents: impl FnOnce(&mut Ui) -> R,
     ) -> MarqueeResponse<R> {
-        // TODO: "new" is planned to be deprecated (use unique in 0.37 instead), 0.36 still uses new tho
-        let const_map_name = Id::new(MARQUEE_STORAGE_NAME);
+        let const_map_name = Id::unique(MARQUEE_STORAGE_NAME);
 
         let info =
             UiStackInfo::new(UiKind::GenericArea).with_tag_value(MARQUEE_STACK_TAG_KEY, self.id);

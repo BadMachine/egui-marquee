@@ -61,7 +61,7 @@ impl<Component, Inside, Outside, Finished>
 
             // Short lock
             let mut areas =
-                ctx.data(|storage| storage.get_temp::<IdMap<State>>(Id::new(MARQUEE_STORAGE_NAME)));
+                ctx.data(|storage| storage.get_temp::<IdMap<State>>(Id::unique(MARQUEE_STORAGE_NAME)));
 
             // State from the previous render
             // We gonna check against previously saved components and
@@ -122,7 +122,7 @@ impl<Component, Inside, Outside, Finished>
 
             ctx.data_mut(|storage| {
                 storage.insert_temp::<IdMap<State>>(
-                    Id::new(MARQUEE_STORAGE_NAME),
+                    Id::unique(MARQUEE_STORAGE_NAME),
                     areas.unwrap_or_default(),
                 )
             });

@@ -1,4 +1,4 @@
-use crate::interaction::{FinishAreaId, InteractiveComponent, Noop};
+use crate::interaction::{FinishAreaId, InteractiveComponent, LeftAreaId, Noop};
 use egui::Response;
 
 pub trait InteractiveResponse<Inside, Outside, Finished>
@@ -61,8 +61,8 @@ where
 impl<Outside, Finished> InteractiveResponse<Noop, Outside, Finished>
     for InteractiveComponent<Response, Noop, Outside, Finished>
 where
+    Outside: for<'a> FnOnce(&mut Response, Vec<LeftAreaId>),
     Finished: for<'a> FnOnce(&mut Response, Vec<FinishAreaId>),
-    Outside: for<'a> FnOnce(&mut Response),
 {
     fn evaluate(self) {
         // if self.inner.ctx.data(|map| map.get_temp(self.id)) {}
@@ -78,7 +78,7 @@ where
         let intersection_check = Self::check_intersection(&id, &inner.ctx, Some(&inner));
 
         if !intersection_check.left.is_empty() {
-            outside_callback(&mut inner);
+            outside_callback(&mut inner, intersection_check.left);
         }
 
         if intersection_check.finished.is_empty() {

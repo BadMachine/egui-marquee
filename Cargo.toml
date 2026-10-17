@@ -1,6 +1,6 @@
 [package]
 name = "egui-marquee"
-version = "0.5.1"
+version = "0.5.2"
 edition = "2024"
 keywords = ["selection", "area", "marquee", "egui", "widget"]
 categories = ["gui"]

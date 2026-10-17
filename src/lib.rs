@@ -107,40 +107,38 @@ impl Marquee {
         // Short read lock
         let mut current_state = ui.data(|d| {
             let map = d.get_temp::<IdMap<State>>(const_map_name);
-            map.map(|m| m.get(&self.id).cloned()).flatten()
+            map.and_then(|m| m.get(&self.id).cloned())
         });
 
-        if inner_response.response.drag_stopped()
-            || inner_response.response.drag_stopped_by(self.button)
-        {
-            if let Some(State::Active {
+        if (inner_response.response.drag_stopped()
+            || inner_response.response.drag_stopped_by(self.button))
+            && let Some(State::Active {
                 start,
                 end,
                 components,
             }) = current_state
-            {
-                let selection = Rect::from_two_pos(start, end);
+        {
+            let selection = Rect::from_two_pos(start, end);
 
-                ui.data_mut(|global_state| {
-                    let marquee_map =
-                        global_state.get_temp_mut_or_default::<IdMap<State>>(const_map_name);
+            ui.data_mut(|global_state| {
+                let marquee_map =
+                    global_state.get_temp_mut_or_default::<IdMap<State>>(const_map_name);
 
-                    // Explicitly shadow the state above
-                    let current_state = State::Finished {
-                        start,
-                        end,
-                        components,
-                    };
-
-                    marquee_map.insert(self.id, current_state);
-                });
-
-                return MarqueeResponse {
-                    inner: inner_response.inner,
-                    response: inner_response.response,
-                    selection: Some(selection),
+                // Explicitly shadow the state above
+                let current_state = State::Finished {
+                    start,
+                    end,
+                    components,
                 };
-            }
+
+                marquee_map.insert(self.id, current_state);
+            });
+
+            return MarqueeResponse {
+                inner: inner_response.inner,
+                response: inner_response.response,
+                selection: Some(selection),
+            };
         }
 
         let current_pointer_pos = inner_response.response.interact_pointer_pos();
@@ -148,14 +146,13 @@ impl Marquee {
         if inner_response.response.drag_started_by(self.button)
             && let Some(start) = ui
                 .input(|i| i.pointer.press_origin())
-                .or_else(|| current_pointer_pos)
+                .or(current_pointer_pos)
         {
             current_state = Some(State::Active {
                 start,
                 end: start,
                 components: current_state
-                    .map(|s| s.components().cloned())
-                    .flatten()
+                    .and_then(|s| s.components().cloned())
                     .unwrap_or_default(),
             });
             // TODO: Think how to rework this one static areas are introduced
@@ -242,8 +239,8 @@ impl Marquee {
             *end = current_end;
         }
 
-        let selection = current_state.as_ref().map(|cs| cs.rect()).flatten();
-        
+        let selection = current_state.as_ref().and_then(|cs| cs.rect());
+
         // Short time lock again so we insert updated state
         ui.data_mut(|global_state| {
             let marquee_map = global_state.get_temp_mut_or_default::<IdMap<State>>(const_map_name);

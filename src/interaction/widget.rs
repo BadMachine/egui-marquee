@@ -13,7 +13,7 @@ where
 impl<Component, Inside> egui::Widget for InteractiveComponent<Component, Inside>
 where
     Component: egui::Widget,
-    Inside: for<'a> FnOnce(&mut Component, Vec<InsideAreaId>),
+    Inside: FnOnce(&mut Component, Vec<InsideAreaId>),
 {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let InteractiveComponent {
@@ -39,7 +39,7 @@ where
 impl<Component, Outside> egui::Widget for InteractiveComponent<Component, Noop, Outside>
 where
     Component: egui::Widget,
-    Outside: for<'a> FnOnce(&mut Component, Vec<LeftAreaId>),
+    Outside: FnOnce(&mut Component, Vec<LeftAreaId>),
 {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let InteractiveComponent {
@@ -56,8 +56,7 @@ where
         }
 
         // use scope since we need to hold a unique Id for the widget
-        // TODO: change id method to scope_id after 0.37 released
-        ui.scope_builder(egui::UiBuilder::new().id(id), |ui| inner.ui(ui))
+        ui.scope_builder(egui::UiBuilder::new().scope_id(id), |ui| inner.ui(ui))
             .inner
     }
 }
@@ -66,8 +65,8 @@ where
 impl<Component, Inside, Outside> egui::Widget for InteractiveComponent<Component, Inside, Outside>
 where
     Component: egui::Widget,
-    Inside: for<'a> FnOnce(&mut Component, Vec<InsideAreaId>),
-    Outside: for<'a> FnOnce(&mut Component, Vec<LeftAreaId>),
+    Inside: FnOnce(&mut Component, Vec<InsideAreaId>),
+    Outside: FnOnce(&mut Component, Vec<LeftAreaId>),
 {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let InteractiveComponent {
@@ -89,8 +88,7 @@ where
         }
 
         // use scope since we need to hold a unique Id for the widget
-        // TODO: change id method to scope_id after 0.37 released
-        ui.scope_builder(egui::UiBuilder::new().id(id), |ui| inner.ui(ui))
+        ui.scope_builder(egui::UiBuilder::new().scope_id(id), |ui| inner.ui(ui))
             .inner
     }
 }
@@ -100,9 +98,9 @@ impl<Component, Inside, Outside, Finished> egui::Widget
     for InteractiveComponent<Component, Inside, Outside, Finished>
 where
     Component: egui::Widget,
-    Inside: for<'a> FnOnce(&mut Component, Vec<InsideAreaId>),
-    Outside: for<'a> FnOnce(&mut Component, Vec<LeftAreaId>),
-    Finished: for<'a> FnOnce(&mut Component, Vec<FinishAreaId>),
+    Inside: FnOnce(&mut Component, Vec<InsideAreaId>),
+    Outside: FnOnce(&mut Component, Vec<LeftAreaId>),
+    Finished: FnOnce(&mut Component, Vec<FinishAreaId>),
 {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let InteractiveComponent {
@@ -128,8 +126,7 @@ where
         }
 
         // use scope since we need to hold a unique Id for the widget
-        // TODO: change id method to scope_id after 0.37 released
-        ui.scope_builder(egui::UiBuilder::new().id(id), |ui| inner.ui(ui))
+        ui.scope_builder(egui::UiBuilder::new().scope_id(id), |ui| inner.ui(ui))
             .inner
     }
 }

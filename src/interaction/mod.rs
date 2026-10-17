@@ -51,7 +51,7 @@ impl<Component, Inside, Outside, Finished>
         let ctx_response = ctx.read_response(*component_id);
 
         let response = current_response
-            .map(|r| Some(r))
+            .map(Some)
             .unwrap_or(ctx_response.as_ref());
 
         let mut check = InteractionCheck::default();
@@ -75,7 +75,7 @@ impl<Component, Inside, Outside, Finished>
                         State::Active {
                             start,
                             end,
-                            components,
+                            ..
                         } => {
                             // If intersects
                             if egui::Rect::from_two_pos(*start, *end).intersects(rect) {
@@ -128,7 +128,7 @@ impl<Component, Inside, Outside, Finished>
             });
         }
 
-        return check
+        check
     }
 }
 
@@ -150,7 +150,7 @@ impl<Component, Outside> InteractiveComponent<Component, Noop, Outside> {
         inside_callback: Inside,
     ) -> InteractiveComponent<Component, Inside, Outside>
     where
-        Inside: for<'a> FnOnce(&mut Component, Vec<Id>),
+        Inside:  FnOnce(&mut Component, Vec<Id>),
     {
         InteractiveComponent {
             id: self.id,
@@ -168,7 +168,7 @@ impl<Component, Inside> InteractiveComponent<Component, Inside, Noop, Noop> {
         outside_callback: Outside,
     ) -> InteractiveComponent<Component, Inside, Outside>
     where
-        Outside: for<'a> FnOnce(&mut Component, Vec<LeftAreaId>),
+        Outside:  FnOnce(&mut Component, Vec<LeftAreaId>),
     {
         InteractiveComponent {
             id: self.id,
@@ -186,7 +186,7 @@ impl<Component, Inside, Outside> InteractiveComponent<Component, Inside, Outside
         end_callback: Finished,
     ) -> InteractiveComponent<Component, Inside, Outside, Finished>
     where
-        Finished: for<'a> FnOnce(&mut Component, Vec<FinishAreaId>),
+        Finished: FnOnce(&mut Component, Vec<FinishAreaId>),
     {
         InteractiveComponent {
             id: self.id,

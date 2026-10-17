@@ -11,7 +11,7 @@ where
 impl<Finished> InteractiveResponse<Noop, Noop, Finished>
     for InteractiveComponent<Response, Noop, Noop, Finished>
 where
-    Finished: for<'a> FnOnce(&mut Response, Vec<FinishAreaId>),
+    Finished: FnOnce(&mut Response, Vec<FinishAreaId>),
 {
     fn evaluate(self) {
         let InteractiveComponent {
@@ -32,7 +32,7 @@ where
 impl<Outside> InteractiveResponse<Noop, Outside, Noop>
     for InteractiveComponent<Response, Noop, Outside>
 where
-    Outside: for<'a> FnOnce(&mut Response),
+    Outside: FnOnce(&mut Response),
 {
     fn evaluate(self) {
         let InteractiveComponent {
@@ -61,8 +61,8 @@ where
 impl<Outside, Finished> InteractiveResponse<Noop, Outside, Finished>
     for InteractiveComponent<Response, Noop, Outside, Finished>
 where
-    Outside: for<'a> FnOnce(&mut Response, Vec<LeftAreaId>),
-    Finished: for<'a> FnOnce(&mut Response, Vec<FinishAreaId>),
+    Outside: FnOnce(&mut Response, Vec<LeftAreaId>),
+    Finished: FnOnce(&mut Response, Vec<FinishAreaId>),
 {
     fn evaluate(self) {
         // if self.inner.ctx.data(|map| map.get_temp(self.id)) {}

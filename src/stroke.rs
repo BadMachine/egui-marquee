@@ -18,7 +18,7 @@ impl Deref for MarqueeStroke {
 impl MarqueeStroke {
     pub fn new(inner: Option<Stroke>) -> Self {
         Self {
-            inner: inner.unwrap_or(Stroke::default()),
+            inner: inner.unwrap_or_default(),
             style: Default::default(),
         }
     }

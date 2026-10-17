@@ -73,7 +73,7 @@ impl eframe::App for MyApp {
 
         let body_text_size = TextStyle::Body.resolve(ui.style()).size;
 
-        egui_marquee::Marquee::new("demo")
+        egui_marquee::Marquee::new(Id::unique("demo"))
             .stroke(Stroke::new(1.0, Color32::RED))
             .show(ui, |ui| {
                 StripBuilder::new(ui)
@@ -93,7 +93,7 @@ impl eframe::App for MyApp {
 
                             let label = egui::Label::new("goo goo")
                                 .wrap()
-                                .interactive("test_interactivity_1")
+                                .interactive(Id::unique("test_interactivity_1"))
                                 .inside(|label, _| {
                                     *label = egui::Label::new("gaga");
                                 });
@@ -112,7 +112,7 @@ impl eframe::App for MyApp {
                                     );
                                     let label = egui::Label::new("foo")
                                         .wrap()
-                                        .interactive("test_interactivity_2")
+                                        .interactive(Id::unique("test_interactivity_2"))
                                         .inside(|label, _| {
                                             *label = egui::Label::new("bar");
                                         });
@@ -155,7 +155,7 @@ impl eframe::App for MyApp {
 
                                                     let label = egui::Label::new(":(")
                                                         .wrap()
-                                                        .interactive(":|")
+                                                        .interactive(Id::unique(":|"))
                                                         .inside(|label, _| {
                                                             *label = egui::Label::new(":)");
                                                             *self
@@ -195,7 +195,7 @@ impl eframe::App for MyApp {
 
                                         let image =
                                             egui::Image::from_bytes("bytes://ferris.svg", FERRIS)
-                                                .interactive("luv_rust")
+                                                .interactive(Id::unique("luv_rust"))
                                                 .inside(|label, _| {
                                                     *label = egui::Image::from_bytes(
                                                         "bytes://heart.svg",
